@@ -1,0 +1,58 @@
+; ------------------------------------------------------------------------
+; oiu boot pager code (oiuboot.asm) by Charles Perkins.
+;
+; This code may be freely included in any project which is distributed 
+; under the Gnu Programming License (GPL.)
+;
+; For inclusion any more or less restrictive project please contact me
+; (chuck@memetech.com) for permission. I will give it--I'm just curious
+; about who might like to use this boot pager.
+;
+; ------------------------------------------------------------------------
+;
+; The boot sector and primitive pager (LBA IDE x86) for oiu
+;
+; This 512 byte boot sector performs the following operations:
+;
+; Create an IDT
+; Load the GDTR and IDTR
+; Switch to protected mode
+; Jump to a 32-bit ring 0 code segment
+; Load the other segment registers with 32-bit ring 0 data descriptors
+; Establish the top of stack
+; Create the page directory and a page table 
+; Enable Paging
+; Enable the A20 line
+; Reprogram the first PIC
+; Jump to a not-present page
+;
+; When a page fault occurs, the code does the following:
+;
+; Intercept the page fault
+; Determine the faulting page
+; Calculate the correct sectors to load from disk
+; Load eight sectors from the disk
+; Resume execution
+;
+; This primitive pager assumes a linear identity mapped address space.
+; The first megabyte is presumed to be scratch-pad or device memory and is
+; not paged--the first page (8 sectors) on the hard drive correspond to
+; the first actual page of memory above the 1M mark. The maximum addressable
+; virtual memory equals the actual amount of physical memory--the pager is
+; simply used as a mechanism for getting a working system image from hard
+; drive storage into actual RAM. The primitive pager does not write pages
+; back to disk.
+;
+; No faults other than a page fault are handled. At all. There are no error
+; messages or faults presented to the user--the code either works (in which
+; case the VM location jumped to may include a routine to present the user 
+; with a welcome message) or the system loops forever, or the system triple-
+; faults. Interrupts are left disabled.
+;
+; This NASM source file is padded to create a boot sector and further padded
+; to create either a 1.44M floppy image or an 8M hard disk image (17 cylinders,
+; 16 heads, 63 sectors per track) that both Bochs and VMWare can use and that
+; (in the case of the 1.44M image) can be rawritten for testing on a real Pentium.
+;
+; Assemble with NASM: nasm -fbin oiuboot.asm
+
